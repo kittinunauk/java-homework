@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import com.wongnai.interview.movie.external.MovieData;
 import com.wongnai.interview.movie.external.MoviesResponse;
