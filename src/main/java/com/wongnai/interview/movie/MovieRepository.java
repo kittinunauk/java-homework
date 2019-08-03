@@ -1,5 +1,7 @@
 package com.wongnai.interview.movie;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
@@ -24,4 +26,13 @@ public interface MovieRepository extends CrudRepository<Movie, Long> {
 	 */
 	@Query("SELECT m FROM Movie m where LOWER(m.name) LIKE %:keyword%")
 	List<Movie> findByNameContains(@Param("keyword") String keyword);
+
+	/**
+	 * Return all movie and its name and id
+	 *
+	 * @return list of movie with only name and id
+	 */
+	@Query("SELECT new Movie(m.id, m.name) FROM Movie m")
+	ArrayList<Movie> findAllMovieAndItsId();
+
 }

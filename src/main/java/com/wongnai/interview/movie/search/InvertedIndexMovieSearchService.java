@@ -3,7 +3,6 @@ package com.wongnai.interview.movie.search;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -37,11 +36,11 @@ public class InvertedIndexMovieSearchService implements MovieSearchService {
 		// you have to return can be union or intersection of those 2 sets of ids.
 		// By the way, in this assignment, you must use intersection so that it left for just movie id 5.
 
-        // Fetch all movies into movieList for Inverted Index Construction
-		ArrayList<Movie> movieList = Lists.newArrayList(movieRepository.findAll());
+        // Fetch all movies (with only title and its id) into movieList for Inverted Index Construction
+		ArrayList<Movie> movieList = movieRepository.findAllMovieAndItsId();
         // Inverted Index Construction <Term, Movie Ids>
         HashMap<String,ArrayList<Long>> invertedIndex = new HashMap<>();
-        // Traverse all movies in movieList and put terms
+        // Traverse all movies in movieList and put terms into it
 		for(Movie movie : movieList){
 		    // Split the title of a movie using a regular expression
             // to split each term in the title using any non-word character
@@ -95,11 +94,7 @@ public class InvertedIndexMovieSearchService implements MovieSearchService {
         // Traverse the list of movie's ids that matched with the query
         // to find a Movie object using a movie's id as a key
         for(Long movieID : resultID){
-            for(Movie tempMovie : movieList) {
-                if(tempMovie.getId().equals(movieID)) {
-                    result.add(tempMovie);
-                }
-            }
+            result.add(movieRepository.findById(movieID).get());
         }
 
         // Return the matched movies
