@@ -1,11 +1,13 @@
 package com.wongnai.interview.movie.search;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
+import com.google.common.collect.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+
 
 import com.wongnai.interview.movie.Movie;
 import com.wongnai.interview.movie.MovieRepository;
@@ -36,55 +38,58 @@ public class InvertedIndexMovieSearchService implements MovieSearchService {
 		// you have to return can be union or intersection of those 2 sets of ids.
 		// By the way, in this assignment, you must use intersection so that it left for just movie id 5.
 
-        // Fetch all movies (with only title and its id) into movieList for Inverted Index Construction
-		ArrayList<Movie> movieList = movieRepository.findAllMovieAndItsId();
+        // Fetch all movies (with only title and its id) into movieSet for Inverted Index Construction
+		Set<Movie> movieSet = new HashSet<>(movieRepository.findAllMovieAndItsId());
         // Inverted Index Construction <Term, Movie Ids>
-        HashMap<String,ArrayList<Long>> invertedIndex = new HashMap<>();
-        // Traverse all movies in movieList and put terms into it
-		for(Movie movie : movieList){
+        HashMap<String,HashSet<Long>> invertedIndex = new HashMap<>();
+        // Define and pre-compile pattern for string splitting
+        Pattern splitPattern = Pattern.compile("\\W+");
+
+        // Traverse all movies in movieSet
+		for(Movie movie : movieSet){
 		    // Split the title of a movie using a regular expression
             // to split each term in the title using any non-word character
             // between each term
-            String[] tempMovieName = movie.getName().split("\\W+");
+            // Convert term into lowercase since we need to handle case insensitive searching
+            String[] termsInMovieName = splitPattern.split(movie.getName().toLowerCase());
             // Traverse each term in the title of the movie
-            for(String term : tempMovieName){
-                // Convert term into lowercase since we need to handle case insensitive searching
-                term = term.toLowerCase();
+            for(String term : termsInMovieName){
                 // Check if term is already exists in inverted index
-                // If it is already exists, append this movie id into its movie's id list
-                // If not, put this word as a new entry and append this movie's id to its list
+                // If it is already exists, append this movie id into its movie's id set
+                // If not, put this word as a new entry and append this movie's id to its set
                 // Assume that stop words can appear in a query. So, currently we should not
                 // to eliminate them
                 if(invertedIndex.containsKey(term)){
                     invertedIndex.get(term).add(movie.getId());
                 }else{
-                    invertedIndex.put(term, new ArrayList<Long>(Arrays.asList(movie.getId())));
+                    invertedIndex.put(term, Sets.newHashSet(movie.getId()));
                 }
-
             }
 		}
 
         // Split a queryText into terms
 		String[] terms = queryText.toLowerCase().split("\\W+");
-		// Instantiate a List of movie's ids that matched with the query
-		List<Long> resultID = new ArrayList<>();
+		// Instantiate a set of movie's ids that matched with the query
+		Set<Long> resultSet = new HashSet<>();
 
 		// Check if the first term in the query match with any term in the inverted index
 		if(invertedIndex.containsKey(terms[0])){
 		    // In case there is such a term, store the movie's ids that has a title
-            // contains that term as a first movie's id list
-            ArrayList<Long> firstIDList =  invertedIndex.get(terms[0]);
-            resultID.addAll(firstIDList);
+            // contains that term as a first movie's id set
+            HashSet<Long> firstIdSet =  invertedIndex.get(terms[0]);
+            resultSet.addAll(firstIdSet);
         }
 
-		// In case that there is one more terms in the query, we need to traverse all terms
-        // in the query and find their corresponding list of movie's ids
+		// In case that there is more than one term in the query, traverse all terms
+        // in the query and get their corresponding set of movie's ids to find
+        // the final set that contain the results of movies
         if(terms.length>1){
             for(String term : terms){
-                // If we have this term in the inverted index, intersect the current list of
-                // movie's ids with the one that this term matched in the inverted index.
+                // If we have this term in the inverted index, intersect the current set of
+                // movie's ids with the one that this term matched in the inverted index
+                // by retaining movie's ids in this term
                 if(invertedIndex.containsKey(term)){
-                    resultID = resultID.stream().distinct().filter(invertedIndex.get(term)::contains).collect(Collectors.toList());
+                    resultSet.retainAll(invertedIndex.get(term));
                 }
             }
         }
@@ -93,7 +98,7 @@ public class InvertedIndexMovieSearchService implements MovieSearchService {
         List<Movie> result = new ArrayList<>();
         // Traverse the list of movie's ids that matched with the query
         // to find a Movie object using a movie's id as a key
-        for(Long movieID : resultID){
+        for(Long movieID : resultSet){
             result.add(movieRepository.findById(movieID).get());
         }
 
