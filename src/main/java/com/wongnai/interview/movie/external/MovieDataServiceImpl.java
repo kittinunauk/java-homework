@@ -41,30 +41,15 @@ public class MovieDataServiceImpl implements MovieDataService {
 		// Please noted that you must only read data remotely and only from given source,
 		// do not download and use local file or put the file anywhere else.
 
-		// Instantiate an object (MoviesRespones) for returning back
+		// Retrieve JSON as a string from MOVIE_DATA_URL using restTemplate
+		String response = restTemplate.getForObject(MOVIE_DATA_URL,String.class);
+		// Instantiate a MovieResponse object for returning back
 		MoviesResponse moviesResponse = new MoviesResponse();
-		// Declare inputStream to read JSON in MOVIE_DATA_URL
-		InputStream inputStream = null;
-		// Use try-catch to handle errors
+		// Use-try-catch to handle errors
 		try {
-			// Open stream and put it into inputStream
-			inputStream = new URL(MOVIE_DATA_URL).openStream();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		// Declare ReadingContext and initialize it using parsed information from inputStream
-		ReadContext context = JsonPath.parse(inputStream);
-		// Parse all movie objects into contextList for creating MovieResponse
-		List<LinkedHashMap> contextList = context.read("$.*");
-		// Instantiate a list to store parsed movie's data
-		List<MovieData> movieDataList = null;
-
-		try {
-			// Use objectMapper to read JSON and parse read contents into MovieData objects.
-			// Then, store them in movieDataList
-			movieDataList = Arrays.asList(objectMapper.readValue(contextList.toString(), MovieData[].class));
-			// Add all elements in  movieDataList (parsed movie's data) into moviesResponse for returning
-			moviesResponse.addAll(movieDataList);
+			// Use objectMapper to convert JSON array (in response) to the list of MovieData
+			// Then, add all of them into moviesResponse for returning back
+			moviesResponse.addAll(Arrays.asList(objectMapper.readValue(response, MovieData[].class)));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
